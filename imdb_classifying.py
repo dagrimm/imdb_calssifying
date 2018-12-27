@@ -1,7 +1,9 @@
+import keras
 from keras.datasets import imdb
 import numpy as np
 from keras import models
 from keras import layers
+from keras import regularizers
 import matplotlib.pyplot as plt
 
 (train_data, train_labels), (test_data, test_labels) = imdb.load_data(num_words=10000)
@@ -25,8 +27,8 @@ y_train = np.asarray(train_labels).astype('float32')
 y_test = np.asarray(test_labels).astype('float32')
 
 model = models.Sequential()
-model.add(layers.Dense(16, activation='tanh', input_shape=(10000,)))
-model.add(layers.Dense(32, activation='tanh'))
+model.add(layers.Dense(16, kernel_regularizer=regularizers.l1_l2(l1=0.01, l2=0.01), activation='relu', input_shape=(10000,)))
+model.add(layers.Dense(16, kernel_regularizer=regularizers.l2(0.01), activation='relu'))
 model.add(layers.Dense(1, activation='sigmoid'))
 
 model.compile(optimizer='rmsprop',
@@ -38,11 +40,15 @@ partial_x_train = x_train[10000:]
 y_val = y_train[:10000]
 partial_y_train = y_train[10000:]
 
+tbcallback = keras.callbacks.TensorBoard(log_dir='./imdblogl1l2', histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None)
+
+
 history = model.fit(x_train,
                     y_train,
-                    epochs=4,
+                    epochs=20,
                     batch_size=512,
-                    validation_data=(x_test, y_test))
+                    validation_data=(x_test, y_test),
+                    callbacks=[tbcallback])
 
 history_dict = history.history
 loss_values = history_dict['loss']
